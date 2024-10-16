@@ -1,9 +1,22 @@
-﻿namespace MashupAPI.Services;
+﻿using System.Text.Json;
+using MashupAPI.Entities.MusicBrainz;
+
+namespace MashupAPI.Services;
 
 public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient)
 {
-    public async Task<object> GetArtist(string b11f4ceA62dEFcA69a8278c7da)
+    public async Task<MbResponse?> GetArtist(string artistId)
     {
-        throw new NotImplementedException();
+        var response = await httpClient.GetAsync($"/artist/{artistId}?&fmt=json&inc=url-rels+release-groups");
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogError($"Failed to get artist with id {artistId}");
+            return null;
+        }
+
+        var content = await response.Content.ReadAsStringAsync();
+        var artist = JsonSerializer.Deserialize<MbResponse>(content);
+
+        return artist;
     }
 }

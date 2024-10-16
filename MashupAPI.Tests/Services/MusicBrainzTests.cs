@@ -22,6 +22,31 @@ public class MusicBrainzTests
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://musicbrainz.org/ws/2");
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        var client = new MusicBrainz(logger, httpClientFactory.CreateClient("testClient"));
+        
+        
+        //When
+        var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
+        
+        //Then
+        result.Should().NotBeNull();
+    }
+    
+    [Fact]
+    public async void CanGetArtistEntity()
+    {
+        //Given
+        var logger = Substitute.For<ILogger<MusicBrainz>>();
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(MusicBrainzResult)
+        };
+        var mockHandler = new MockHttpMessageHandler(response);
+        var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://musicbrainz.org/ws/2");
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
         
@@ -32,5 +57,8 @@ public class MusicBrainzTests
         
         //Then
         result.Should().NotBeNull();
+        result?.Name.Should().Be("Nirvana");
+        result?.Country.Should().Be("US");
+        result?.ReleaseGroups.Should().NotBeNullOrEmpty();
     }
 }
