@@ -1,4 +1,5 @@
-using RestSharp;
+using MashupAPI.Services;
+using MashupAPI.Infrastructure.Policies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,10 @@ builder.Configuration.AddConfiguration(new ConfigurationBuilder()
     .Build());
 
 // Add services to the container.
+builder.Services.AddHttpClient<IMusicBrainz, MusicBrainz>(client =>
+        client.BaseAddress =
+            new Uri(builder.Configuration["RestEndpoints:MusicBrainz"] ?? "https://musicbrainz.org/ws/2/"))
+    .AddPolicyHandler(HttpClientPolicies.GetRetryPolicy());
 
 
 builder.Services.AddControllers();

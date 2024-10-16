@@ -5,7 +5,7 @@ namespace MashupAPI.Infrastructure.Policies;
 
 public static class HttpClientPolicies
 {
-    static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    public static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()

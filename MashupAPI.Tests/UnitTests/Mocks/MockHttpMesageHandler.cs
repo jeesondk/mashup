@@ -1,4 +1,4 @@
-﻿namespace MashupAPI.Tests.Mocks;
+﻿namespace MashupAPI.Tests.UnitTests.Mocks;
 
 public class MockHttpMessageHandler(HttpResponseMessage responseMessage) : HttpMessageHandler
 {
