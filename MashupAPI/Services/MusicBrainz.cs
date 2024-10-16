@@ -17,7 +17,7 @@ public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient) : I
         var response = await httpClient.GetAsync($"/artist/{artistId}?&fmt=json&inc=url-rels+release-groups");
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogError($"Failed to get artist with id {artistId}");
+            logger.LogInformation($"Failed to get artist with id {artistId}");
             return null;
         }
 
