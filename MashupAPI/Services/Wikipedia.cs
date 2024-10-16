@@ -36,7 +36,7 @@ public class Wikipedia(ILogger<Wikipedia> logger, HttpClient httpClient)
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error parsing WikiData JSON");
+            logger.LogInformation(e, "Error parsing WikiData JSON");
             return new WikiResponse(string.Empty, new Warnings(new Extracts(string.Empty)), new Query([]));
         }
     }

@@ -9,6 +9,7 @@ using NSubstitute;
 
 namespace MashupAPI.Tests.UnitTests.Services;
 
+[Trait("Category", "Unit")]
 public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
 {
     private readonly WikiDataServiceFixture _fixture;
@@ -48,6 +49,42 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         result?.Site.Should().Be(site);
         result?.Title.Should().Be(title);
     }
+    
+    [Fact]
+    public async void CanHandleNoWikiDataFound()
+    {
+        //Given
+        var client = new WikiData(_logger, _httpClient);
+        
+        //When
+        var result = await client.GetWikiDataById("jkldnrfg", "en");
+        
+        //Then
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async void CanHandleNotFound()
+    {
+        //Given
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent(string.Empty)
+        };
+        var mockHandler = new MockHttpMessageHandler(response);
+        var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://www.wikidata.org/w/api.php");
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+
+        var client = new WikiData(_logger, httpClientFactory.CreateClient("testClient"));
+        
+        //When
+        var result = await client.GetWikiDataById("Q11649");
+        
+        //Then
+        result.Should().BeNull();
+    }
 
     [Fact]
     public void CanGetUrlEncodedWikipediaLink()
@@ -61,5 +98,19 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         
         //Then
         result.Should().Be("Nirvana+(band)");
+    }
+    
+    [Fact]
+    public void CanHandleNoWikipediaTitle()
+    {
+        //Given
+        var entity = new Sitelink("enwiki", "", []);
+        var client = new WikiData(_logger, _httpClient);
+        
+        //When
+        var result = client.GetWikipediaTitle(entity);
+        
+        //Then
+        result.Should().BeEmpty();
     }
 }

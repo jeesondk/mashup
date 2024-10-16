@@ -22,16 +22,6 @@ public class WikipediaServiceFixture: IDisposable
                     "extracts": {
                       "*": "HTML may be malformed and/or unbalanced and may omit inline images. Use at your own risk. Known problems are listed at https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:TextExtracts#Caveats."
                     }
-                  },
-                  "query": {
-                    "pages": {
-                      "21231": {
-                        "pageid": 21231,
-                        "ns": 0,
-                        "title": "Nirvana (band)",
-                        "extract": ""
-                      }
-                    }
                   }
                 }    
                 """;

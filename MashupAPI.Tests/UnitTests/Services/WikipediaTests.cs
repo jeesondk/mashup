@@ -9,15 +9,16 @@ using NSubstitute;
 
 namespace MashupAPI.Tests.UnitTests.Services;
 
-public class WikipediaTests: IClassFixture<WikiDataServiceFixture>
+[Trait("Category", "Unit")]
+public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
 {
     private readonly WikipediaServiceFixture _fixture;
     private readonly ILogger<Wikipedia> _logger;
     private readonly HttpClient _httpClient;
 
-    public WikipediaTests()
+    public WikipediaTests(WikipediaServiceFixture fixture)
     {
-        _fixture = new WikipediaServiceFixture();
+        _fixture = fixture;
         _logger = Substitute.For<ILogger<Wikipedia>>();
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -66,8 +67,7 @@ public class WikipediaTests: IClassFixture<WikiDataServiceFixture>
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
 
         //Then
-        result.batchcomplete.Should().Be("");
-        result.query.pages[0]?.extract.Should().Be(string.Empty);
+        result.Should().BeEquivalentTo(new WikiResponse(string.Empty, new Warnings(new Extracts(string.Empty)), new Query([])));
     }
     
     [Fact]
