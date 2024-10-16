@@ -1,0 +1,6 @@
+﻿services:
+  mashupapi:
+    image: mashupapi
+    build:
+      context: .
+      dockerfile: MashupAPI/Dockerfile

@@ -1,0 +1,6 @@
+@MashupAPI_HostAddress = http://localhost:5172
+
+GET {{MashupAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
