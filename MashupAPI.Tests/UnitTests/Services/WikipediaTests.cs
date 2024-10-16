@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using FluentAssertions;
+using MashupAPI.Entities.Wikipedia;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
@@ -43,5 +44,76 @@ public class WikipediaTests: IClassFixture<WikiDataServiceFixture>
         //Then
         result.batchcomplete.Should().Be("");
         result.query.pages[0]?.title.Should().Be("Nirvana (band)");
+    }
+
+    [Fact]
+    public async void CanHandleMalformedResponse()
+    {
+        //Given
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(_fixture.WikipediaMalformedResponse)
+        };
+        var mockHandler = new MockHttpMessageHandler(response);
+        var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        
+        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"));
+        
+        //When
+        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
+
+        //Then
+        result.batchcomplete.Should().Be("");
+        result.query.pages[0]?.extract.Should().Be(string.Empty);
+    }
+    
+    [Fact]
+    public async void CanHandleErrorResponse()
+    {
+        //Given
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent(string.Empty)
+        };
+        var mockHandler = new MockHttpMessageHandler(response);
+        var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+
+        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"));
+
+        //When
+        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
+
+        //Then
+        result.Should().BeEquivalentTo(new WikiResponse(string.Empty, new Warnings(new Extracts(string.Empty)), new Query([])));
+    }
+
+    [Fact]
+    public async void CanHandleNotFound()
+    {
+        //Given
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(_fixture.WikipediaNoContentResponse)
+        };
+        var mockHandler = new MockHttpMessageHandler(response);
+        var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+
+        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"));
+
+        //When
+        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
+
+        //Then
+        result.batchcomplete.Should().Be("");
+        result.query.pages[0]?.pageid.Should().Be(0);
     }
 }

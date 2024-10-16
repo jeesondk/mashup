@@ -4,11 +4,37 @@ public class WikipediaServiceFixture: IDisposable
 {
     public string WikipediaResponse { get; private set; }
     public string WikipediaNoContentResponse { get; private set; }
+    public string WikipediaMalformedResponse { get; set; }
 
     public WikipediaServiceFixture()
     {
         WikipediaResponse = InitWikipediaResponse();
         WikipediaNoContentResponse = InitWikipediaNoContentResponse();
+        WikipediaMalformedResponse = InitWikipediaMalformedResponse();
+    }
+
+    private string InitWikipediaMalformedResponse()
+    {
+      return """
+                {
+                  "batchcomplete": "",
+                  "warnings": {
+                    "extracts": {
+                      "*": "HTML may be malformed and/or unbalanced and may omit inline images. Use at your own risk. Known problems are listed at https://www.mediawiki.org/wiki/Special:MyLanguage/Extension:TextExtracts#Caveats."
+                    }
+                  },
+                  "query": {
+                    "pages": {
+                      "21231": {
+                        "pageid": 21231,
+                        "ns": 0,
+                        "title": "Nirvana (band)",
+                        "extract": ""
+                      }
+                    }
+                  }
+                }    
+                """;
     }
 
     private string InitWikipediaResponse()
