@@ -6,6 +6,8 @@ namespace MashupAPI.Services;
 public interface IMusicBrainz
 {
     Task<MbResponse?> GetArtist(string artistId);
+    string GetWikiDataRelation(MbResponse entity);
+    string GetWikipediaRelation(MbResponse entity);
 }
 
 public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient) : IMusicBrainz
@@ -25,8 +27,41 @@ public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient) : I
         return artist;
     }
 
-    public async Task<string> GetWikiDataId(string artistId)
+    public string GetWikiDataRelation(MbResponse entity)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var wikiRelation = entity.Relations.First(x => x.Type == "wikidata");
+            var id = wikiRelation
+                .Url
+                .Resource
+                .Split("/")
+                .Last();
+            return id;   
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e, "No WikiData relation found");
+            return string.Empty;
+        }
     }
+
+    public string GetWikipediaRelation(MbResponse entity)
+    {
+        try
+        {
+            var wikiRelation = entity.Relations.FirstOrDefault(x => x.Type == "wikipedia");
+            var id = wikiRelation
+                .Url.Resource
+                .Split("/")
+                .Last();
+            return id;
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e, "No Wikipedia relation found");
+            return string.Empty;
+        }
+    }
+    
 }
