@@ -52,7 +52,7 @@ public record Area(
         [property: JsonPropertyName("secondary-type-ids")] IReadOnlyList<string> SecondaryTypeIds
     );
 
-    public record MbResponse(
+    public record MusicBrainzResponse(
         [property: JsonPropertyName("country")] string Country,
         [property: JsonPropertyName("gender")] string Gender,
         [property: JsonPropertyName("area")] Area Area,

@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using FluentAssertions;
 using MashupAPI.Entities.WikiData;
+using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
@@ -40,7 +41,10 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
     public async void CanGetWikiDataById(string id, string site, string title, string language)
     {
         //Given
-        var client = new WikiData(_logger, _httpClient);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new WikiData(_logger, _httpClient, validator);
         
         //When
         var result = await client.GetWikiDataById(id, language);
@@ -54,7 +58,10 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
     public async void CanHandleNoWikiDataFound()
     {
         //Given
-        var client = new WikiData(_logger, _httpClient);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new WikiData(_logger, _httpClient, validator);
         
         //When
         var result = await client.GetWikiDataById("jkldnrfg", "en");
@@ -76,8 +83,10 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         httpClient.BaseAddress = new Uri("https://www.wikidata.org/w/api.php");
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        var client = new WikiData(_logger, httpClientFactory.CreateClient("testClient"));
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
+        
+        var client = new WikiData(_logger, httpClientFactory.CreateClient("testClient"), validator);
         
         //When
         var result = await client.GetWikiDataById("Q11649");
@@ -91,7 +100,11 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
     {
         //Given
         var entity = new Sitelink("enwiki", "Nirvana (band)", []);
-        var client = new WikiData(_logger, _httpClient);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new WikiData(_logger, _httpClient, validator);
+        
         
         //When
         var result = client.GetWikipediaTitle(entity);
@@ -105,7 +118,10 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
     {
         //Given
         var entity = new Sitelink("enwiki", "", []);
-        var client = new WikiData(_logger, _httpClient);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new WikiData(_logger, _httpClient, validator);
         
         //When
         var result = client.GetWikipediaTitle(entity);

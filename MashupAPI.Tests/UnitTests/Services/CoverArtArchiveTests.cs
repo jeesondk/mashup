@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using FluentAssertions;
-using MashupAPI.Entities.Wikipedia;
+using MashupAPI.Entities.CoverartArchive;
 using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
@@ -11,119 +11,118 @@ using NSubstitute;
 namespace MashupAPI.Tests.UnitTests.Services;
 
 [Trait("Category", "Unit")]
-public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
+public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
 {
-    private readonly WikipediaServiceFixture _fixture;
-    private readonly ILogger<Wikipedia> _logger;
+    private readonly CoverartArchiveServiceFixture _fixture;
+    private readonly ILogger<CoverArtArchive> _logger;
     private readonly HttpClient _httpClient;
 
-    public WikipediaTests(WikipediaServiceFixture fixture)
+    public CoverArtArchiveTests(CoverartArchiveServiceFixture fixture)
     {
         _fixture = fixture;
-        _logger = Substitute.For<ILogger<Wikipedia>>();
+        _logger = Substitute.For<ILogger<CoverArtArchive>>();
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent(_fixture.WikipediaResponse)
+            Content = new StringContent(_fixture.CoverartArchiveResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        httpClient.BaseAddress = new Uri(" https://coverartarchive.org");
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
 
         _httpClient = httpClientFactory.CreateClient("testClient");
     }
-    
+
     [Fact]
-    public async void CanGetWikipediaPageByTitle()
+    public async void CanGetCoveartById()
     {
         //Given
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        var client = new CoverArtArchive(_logger, _httpClient, validator);
         
-        var client = new Wikipedia(_logger, _httpClient, validator);
+        //when
+        var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
+        
+        //Then
+        result.Images.First().ImageUrl.Should().Be("http://coverartarchive.org/release/f268b8bc-2768-426b-901b-c7966e76de29/12750224075.png");
+    }
+    
+    [Fact]
+    public async void CanHandleNotFound()
+    {
+        //Given
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = new StringContent("Not Found")
+        };
+        var mockHandler = new MockHttpMessageHandler(response);
+        var httpClient = new HttpClient(mockHandler);
+        httpClient.BaseAddress = new Uri("https://coverartarchive.org");
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
+
+        var client = new CoverArtArchive(_logger, httpClient, validator);
         
         //When
-        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
-
+        var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
+        
         //Then
-        result.Should().NotBeNull();
-        result?.batchcomplete.Should().Be("");
-        result?.query.pages[0]?.title.Should().Be("Nirvana (band)");
+        result.Should().BeNull();
     }
-
+    
     [Fact]
     public async void CanHandleMalformedResponse()
     {
         //Given
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent(_fixture.WikipediaMalformedResponse)
+            Content = new StringContent(_fixture.CoverartArchiveMalformedResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        httpClient.BaseAddress = new Uri("https://coverartarchive.org");
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
         var validator = Substitute.For<IJsonValidator>();
-        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
-        
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator);
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", "something else"));
+
+        var client = new CoverArtArchive(_logger, httpClient, validator);
         
         //When
-        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
-
-        //Then
-        result.Should().BeNull();
-    }
-    
-    [Fact]
-    public async void CanHandleErrorResponse()
-    {
-        //Given
-        var response = new HttpResponseMessage(HttpStatusCode.NotFound)
-        {
-            Content = new StringContent(string.Empty)
-        };
-        var mockHandler = new MockHttpMessageHandler(response);
-        var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-        var validator = Substitute.For<IJsonValidator>();
-        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
-
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator);
-
-        //When
-        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
-
+        var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
+        
         //Then
         result.Should().BeNull();
     }
 
     [Fact]
-    public async void CanHandleNotFound()
+    public async void CanHandleEmptyResponse()
     {
         //Given
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent(_fixture.WikipediaNoContentResponse)
+            Content = new StringContent(_fixture.CoverartArchiveEmptyResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        httpClient.BaseAddress = new Uri("https://coverartarchive.org");
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
         var validator = Substitute.For<IJsonValidator>();
-        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, string.Empty, string.Empty));
-
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator);
-
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", "something else"));
+        
+        var client = new CoverArtArchive(_logger, httpClient, validator);
+        
         //When
-        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
-
+        var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
+        
         //Then
         result.Should().BeNull();
     }
+    
 }
+

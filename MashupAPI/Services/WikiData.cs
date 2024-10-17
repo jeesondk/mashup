@@ -1,11 +1,19 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using MashupAPI.Entities.WikiData;
+using MashupAPI.Infrastructure.Validator;
 using static System.Net.WebUtility;
 
 namespace MashupAPI.Services;
 
-public class WikiData(ILogger<WikiData> logger, HttpClient httpClient)
+public interface IWikiData
+{
+    Task<Sitelink?> GetWikiDataById(string id, string language = "en");
+    string GetWikipediaTitle(Sitelink entity);
+}
+
+public class WikiData(ILogger<WikiData> logger, HttpClient httpClient, IJsonValidator validator) : IWikiData
 {
     public async Task<Sitelink?> GetWikiDataById(string id, string language = "en")
     {
@@ -16,6 +24,13 @@ public class WikiData(ILogger<WikiData> logger, HttpClient httpClient)
             return null;
         }
         var content = await response.Content.ReadAsStringAsync();
+        var (result, details, errors) = validator.ValidateJson(WikiDataSchema.Schema, content);
+        
+        if(!result)
+        {
+            logger.LogInformation($"Failed to validate JSON: {details} {errors}");
+            return null;
+        }
         
         return ParseWikiData(content, id, language);
     }

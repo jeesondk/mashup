@@ -2,6 +2,7 @@
 using System.Text.Json;
 using FluentAssertions;
 using MashupAPI.Entities.MusicBrainz;
+using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
@@ -38,7 +39,9 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     public async void CanGetArtistById()
     {
         //Given
-        var client = new MusicBrainz(_logger, _httpClient);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        var client = new MusicBrainz(_logger, _httpClient, validator);
         
         //When
         var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
@@ -62,7 +65,10 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         httpClient.BaseAddress = new Uri("https://musicbrainz.org/ws/2");
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-        var client = new MusicBrainz(_logger, httpClientFactory.CreateClient("FailingTestClient"));
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
+        
+        var client = new MusicBrainz(_logger, httpClientFactory.CreateClient("FailingTestClient"), validator);
         
         //When
         var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
@@ -75,8 +81,11 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     public void CanGetWikiDataRelation()
     {
         //Given
-        var client = new MusicBrainz(_logger, _httpClient);
-        var entity = JsonSerializer.Deserialize<MbResponse>(_fixture.MusicBrainzResponse);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new MusicBrainz(_logger, _httpClient, validator);
+        var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzResponse);
         
         //When
         var result = client.GetWikiDataRelation(entity!);
@@ -90,8 +99,11 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     public void CanHandleNoWikiDataRelations()
     {
         //Given
-        var client = new MusicBrainz(_logger, _httpClient);
-        var entity = JsonSerializer.Deserialize<MbResponse>(_fixture.MusicBrainzNoRelationsResponse);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new MusicBrainz(_logger, _httpClient, validator);
+        var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzNoRelationsResponse);
         
         //When
         var result = client.GetWikiDataRelation(entity!);
@@ -105,8 +117,11 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     public void GetWikipediaRelation()
     {
         //Given
-        var client = new MusicBrainz(_logger, _httpClient);
-        var entity = JsonSerializer.Deserialize<MbResponse>(_fixture.MusicBrainzResponse);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        
+        var client = new MusicBrainz(_logger, _httpClient, validator);
+        var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzResponse);
         
         //When
         var result = client.GetWikipediaRelation(entity!);
@@ -120,8 +135,10 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     public void CanHandleNoWikipediaRelations()
     {
         //Given
-        var client = new MusicBrainz(_logger, _httpClient);
-        var entity = JsonSerializer.Deserialize<MbResponse>(_fixture.MusicBrainzNoRelationsResponse);
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
+        var client = new MusicBrainz(_logger, _httpClient, validator);
+        var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzNoRelationsResponse);
         
         //When
         var result = client.GetWikipediaRelation(entity!);

@@ -1,18 +1,19 @@
 ﻿using System.Text.Json;
 using MashupAPI.Entities.MusicBrainz;
+using MashupAPI.Infrastructure.Validator;
 
 namespace MashupAPI.Services;
 
 public interface IMusicBrainz
 {
-    Task<MbResponse?> GetArtist(string artistId);
-    string GetWikiDataRelation(MbResponse entity);
-    string GetWikipediaRelation(MbResponse entity);
+    Task<MusicBrainzResponse?> GetArtist(string artistId);
+    string GetWikiDataRelation(MusicBrainzResponse entity);
+    string GetWikipediaRelation(MusicBrainzResponse entity);
 }
 
-public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient) : IMusicBrainz
+public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient, IJsonValidator jsonValidator) : IMusicBrainz
 {
-    public async Task<MbResponse?> GetArtist(string artistId)
+    public async Task<MusicBrainzResponse?> GetArtist(string artistId)
     {
         var response = await httpClient.GetAsync($"/artist/{artistId}?&fmt=json&inc=url-rels+release-groups");
         if (!response.IsSuccessStatusCode)
@@ -22,12 +23,19 @@ public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient) : I
         }
 
         var content = await response.Content.ReadAsStringAsync();
-        var artist = JsonSerializer.Deserialize<MbResponse>(content);
+        var (result, details, errors) = jsonValidator.ValidateJson(MusicBrainzSchema.Schema, content);
+        if(!result)
+        {
+            logger.LogInformation($"Failed to validate JSON: {details} {errors}");
+            return null;
+        }
+        
+        var artist = JsonSerializer.Deserialize<MusicBrainzResponse>(content);
 
         return artist;
     }
 
-    public string GetWikiDataRelation(MbResponse entity)
+    public string GetWikiDataRelation(MusicBrainzResponse entity)
     {
         try
         {
@@ -46,16 +54,15 @@ public class MusicBrainz(ILogger<MusicBrainz> logger, HttpClient httpClient) : I
         }
     }
 
-    public string GetWikipediaRelation(MbResponse entity)
+    public string GetWikipediaRelation(MusicBrainzResponse entity)
     {
         try
         {
             var wikiRelation = entity.Relations.FirstOrDefault(x => x.Type == "wikipedia");
-            var id = wikiRelation
-                .Url.Resource
+            var id = wikiRelation?.Url.Resource
                 .Split("/")
                 .Last();
-            return id;
+            return id ?? string.Empty;
         }
         catch (Exception e)
         {
