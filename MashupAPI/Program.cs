@@ -29,16 +29,17 @@ builder.Services.AddHttpClient<IWikiData, WikiData>(client =>
         client.BaseAddress =
             new Uri(builder.Configuration["APIEndpoints:Wikipedia"] ?? "https://en.wikipedia.org/w/api.php"))
     .AddPolicyHandler(HttpClientPolicies.GetRetryPolicy());
-/*builder.Services.AddHttpClient<ICoverartArchive, CoverartArchive>(client =>
+builder.Services.AddHttpClient<ICoverArtArchive, CoverArtArchive>(client =>
         client.BaseAddress =
             new Uri(builder.Configuration["APIEndpoints:CoverartArchive"] ?? "https://coverartarchive.org"))
-    .AddPolicyHandler(HttpClientPolicies.GetRetryPolicy());*/
+    .AddPolicyHandler(HttpClientPolicies.GetRetryPolicy());
 
 builder.Services.AddTransient<IJsonValidator, JsonValidator>();
 builder.Services.AddTransient<IMusicBrainz, MusicBrainz>();
 builder.Services.AddTransient<IWikiData, WikiData>();
 builder.Services.AddTransient<IWikipedia, Wikipedia>();
 builder.Services.AddTransient<ICoverArtArchive, CoverArtArchive>();
+builder.Services.AddTransient<IMashup, Mashup>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
