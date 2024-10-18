@@ -5,12 +5,12 @@ public static class MusicBrainzSchema
     public const string Schema = """
                             {
                             "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "title": "MusicBrainz Schema",
                             "description": "",
                             "type": "object",
                             "properties": {
                               "name": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               },
                               "relations": {
                                 "type": "array",
@@ -28,11 +28,10 @@ public static class MusicBrainzSchema
                                   ],
                                   "properties": {
                                     "target-type": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "target-credit": {
-                                      "type": "string"
+                                      "type": ["string", "null"]
                                     },
                                     "attribute-ids": {
                                       "type": "object",
@@ -40,11 +39,10 @@ public static class MusicBrainzSchema
                                       "required": []
                                     },
                                     "direction": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "source-credit": {
-                                      "type": "string"
+                                      "type": ["string", "null"]
                                     },
                                     "attributes": {
                                       "type": "array",
@@ -54,19 +52,16 @@ public static class MusicBrainzSchema
                                       }
                                     },
                                     "type-id": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "url": {
                                       "type": "object",
                                       "properties": {
                                         "id": {
-                                          "type": "string",
-                                          "minLength": 1
+                                          "type": ["string", "null"]
                                         },
                                         "resource": {
-                                          "type": "string",
-                                          "minLength": 1
+                                          "type": ["string", "null"]
                                         }
                                       },
                                       "required": [
@@ -83,8 +78,7 @@ public static class MusicBrainzSchema
                                       "type": "boolean"
                                     },
                                     "type": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "begin": {
                                       "type": ["string", "null"],
@@ -103,15 +97,13 @@ public static class MusicBrainzSchema
                                 "type": "object",
                                 "properties": {
                                   "begin": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "ended": {
                                     "type": "boolean"
                                   },
                                   "end": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   }
                                 },
                                 "required": [
@@ -121,8 +113,7 @@ public static class MusicBrainzSchema
                                 ]
                               },
                               "disambiguation": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               },
                               "isnis": {
                                 "type": "array",
@@ -140,12 +131,10 @@ public static class MusicBrainzSchema
                                     "required": []
                                   },
                                   "name": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "sort-name": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "iso-3166-1-codes": {
                                     "type": "array",
@@ -155,11 +144,10 @@ public static class MusicBrainzSchema
                                     }
                                   },
                                   "id": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "disambiguation": {
-                                    "type": "string"
+                                    "type": ["string", "null"]
                                   },
                                   "type-id": {
                                     "type": ["object", "null"],
@@ -178,8 +166,7 @@ public static class MusicBrainzSchema
                                 ]
                               },
                               "sort-name": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               },
                               "release-groups": {
                                 "type": "array",
@@ -196,12 +183,10 @@ public static class MusicBrainzSchema
                                   ],
                                   "properties": {
                                     "primary-type": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "title": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "secondary-type-ids": {
                                       "type": "array",
@@ -211,12 +196,10 @@ public static class MusicBrainzSchema
                                       }
                                     },
                                     "id": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "first-release-date": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     },
                                     "secondary-types": {
                                       "type": "array",
@@ -226,18 +209,16 @@ public static class MusicBrainzSchema
                                       }
                                     },
                                     "disambiguation": {
-                                      "type": "string"
+                                      "type": ["string", "null"]
                                     },
                                     "primary-type-id": {
-                                      "type": "string",
-                                      "minLength": 1
+                                      "type": ["string", "null"]
                                     }
                                   }
                                 }
                               },
                               "type": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               },
                               "end-area": {
                                 "type": ["object", "null"],
@@ -245,12 +226,10 @@ public static class MusicBrainzSchema
                                 "required": []
                               },
                               "id": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               },
                               "country": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               },
                               "gender-id": {
                                 "type": ["object", "null"],
@@ -273,12 +252,10 @@ public static class MusicBrainzSchema
                                 "type": "object",
                                 "properties": {
                                   "sort-name": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "name": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "type": {
                                     "type": ["object", "null"],
@@ -286,11 +263,10 @@ public static class MusicBrainzSchema
                                     "required": []
                                   },
                                   "disambiguation": {
-                                    "type": "string"
+                                    "type": ["string", "null"]
                                   },
                                   "id": {
-                                    "type": "string",
-                                    "minLength": 1
+                                    "type": ["string", "null"]
                                   },
                                   "type-id": {
                                     "type": ["object", "null"],
@@ -308,8 +284,7 @@ public static class MusicBrainzSchema
                                 ]
                               },
                               "type-id": {
-                                "type": "string",
-                                "minLength": 1
+                                "type": ["string", "null"]
                               }
                             },
                             "required": [

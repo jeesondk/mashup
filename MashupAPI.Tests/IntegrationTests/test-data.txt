@@ -1,0 +1,5 @@
+﻿Radiohead: a74b1b7f-71a5-4011-9441-d0b5e4122711
+Queen: 0383dadf-2a4e-4d10-a46a-e9e041da8eb3
+Slipknot: a466c2a2-6517-42fb-a160-1087c3bafd9f
+Nirvana: 5b11f4ce-a62d-471e-81fc-a69a8278c7da
+Metallica: 65f4f0c5-ef9e-490c-aee3-909e7ae6b2ab

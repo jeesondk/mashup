@@ -23,16 +23,28 @@ public class Mashup(ILogger<Mashup> logger, IMusicBrainz musicBrainz, IWikiData 
             return null;
         }
         
-        var wikipediaLink = await GetWikiData(musicBrainz.GetWikiDataRelation(musicBrainzEntity));
-        var wikipediaData = await GetWikipedia(musicBrainz.GetWikipediaRelation(musicBrainzEntity));
-        var description = wikipediaData?.query.pages[0]?.extract ?? string.Empty;
+        var description = await GetDescription(musicBrainz.GetWikipediaRelation(musicBrainzEntity), musicBrainz.GetWikiDataRelation(musicBrainzEntity));
+        
         
         var albums = await BuildAlbums(musicBrainzEntity.ReleaseGroups);
 
         var response = new MashupResponse(id, description, albums);
         return response;
     }
-    
+
+    private async Task<string> GetDescription(string wikipediaLink, string wikiDataId)
+    {
+        WikiResponse? wikiResponse;
+        if (wikipediaLink == string.Empty && wikiDataId != string.Empty)
+        {
+            var siteLink = await GetWikiData(wikiDataId);
+            wikiResponse = await GetWikipedia(siteLink?.Title ?? string.Empty);
+            return wikiResponse?.query?.pages[0]?.extract ?? string.Empty;
+        }
+        wikiResponse = await GetWikipedia(wikipediaLink);
+        return wikiResponse?.query?.pages[0]?.extract ?? string.Empty;
+    }
+
     private async Task<List<Album>> BuildAlbums(IReadOnlyList<ReleaseGroup> releaseGroups)
     {
         var coverArtTasks = releaseGroups.Select( release => GetCoverArtArchive(release.Id)).ToArray();

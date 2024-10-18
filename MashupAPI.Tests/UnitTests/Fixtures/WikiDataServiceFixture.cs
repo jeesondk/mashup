@@ -606,7 +606,6 @@ public class WikiDataServiceFixture: IDisposable
                  },
                  "success": 1
                }
-
                """;
     }
     

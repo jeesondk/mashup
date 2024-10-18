@@ -4,8 +4,8 @@ public static class WikipediaSchema
 {
     public const string Schema = """
                                     {
-                                   "$schema": "http://json-schema.org/draft-07/schema#",
-                                   "title": "Generated schema for Root",
+                                   "$schema": "https://json-schema.org/draft/2020-12/schema",
+                                   "title": "Wikipedia Schema",
                                    "type": "object",
                                    "properties": {
                                      "batchcomplete": {
@@ -36,14 +36,14 @@ public static class WikipediaSchema
                                          "pages": {
                                            "type": "object",
                                            "properties": {
-                                             "21231": {
+                                             "anyOf": {
                                                "type": "object",
                                                "properties": {
                                                  "pageid": {
-                                                   "type": "number"
+                                                   "type": "integer"
                                                  },
                                                  "ns": {
-                                                   "type": "number"
+                                                   "type": "integer"
                                                  },
                                                  "title": {
                                                    "type": "string"
@@ -59,10 +59,7 @@ public static class WikipediaSchema
                                                  "extract"
                                                ]
                                              }
-                                           },
-                                           "required": [
-                                             "21231"
-                                           ]
+                                           }
                                          }
                                        },
                                        "required": [
