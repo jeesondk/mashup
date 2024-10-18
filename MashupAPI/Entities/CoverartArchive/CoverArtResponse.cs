@@ -14,7 +14,7 @@ public record Image(
     [property: JsonPropertyName("back")] bool Back
 );
 
-public record CoverartResponse(
+public record CoverArtResponse(
     [property: JsonPropertyName("release")] string Release,
     [property: JsonPropertyName("images")] IReadOnlyList<Image> Images
 );

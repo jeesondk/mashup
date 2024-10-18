@@ -1,8 +1,9 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using MashupAPI.Entities.WikiData;
+using MashupAPI.Infrastructure.Cache;
 using MashupAPI.Infrastructure.Validator;
+using RestSharp;
 using static System.Net.WebUtility;
 
 namespace MashupAPI.Services;
@@ -13,17 +14,27 @@ public interface IWikiData
     string GetWikipediaTitle(Sitelink entity);
 }
 
-public class WikiData(ILogger<WikiData> logger, HttpClient httpClient, IJsonValidator validator) : IWikiData
+public class WikiData(ILogger<WikiData> logger, IConfiguration configuration, IJsonValidator validator, IMashupMemoryCache cache) : IWikiData
 {
     public async Task<Sitelink?> GetWikiDataById(string id, string language = "en")
     {
-        var response = await httpClient.GetAsync($"?action=wbgetentities&format=json&ids={id}&props=sitelinks");
+        var isCached = cache.TryGetValue($"WikiData:{id}", out Sitelink? cachedWikiData);
+        if (isCached) return cachedWikiData;
+        
+        var restClient = new RestClient();
+        var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:WikiData") ?? "https://www.wikidata.org/w/api.php");
+            
+        var request = new RestRequest($"{baseUrl}?action=wbgetentities&format=json&ids={id}&props=sitelinks", Method.Get);
+        request.AddHeader("User-Agent", "MashupAPI");
+        request.AddHeader("Accept", "application/json");
+        
+        var response = await restClient.GetAsync(request);
         if (!response.IsSuccessStatusCode)
         {
             logger.LogInformation($"Failed to get artist with id {id}");
             return null;
         }
-        var content = await response.Content.ReadAsStringAsync();
+        var content = response.Content ?? string.Empty;
         var (result, details, errors) = validator.ValidateJson(WikiDataSchema.Schema, content);
         
         if(!result)
@@ -32,7 +43,9 @@ public class WikiData(ILogger<WikiData> logger, HttpClient httpClient, IJsonVali
             return null;
         }
         
-        return ParseWikiData(content, id, language);
+        var siteLink = ParseWikiData(content, id, language);
+        cache.Set($"WikiData:{id}", JsonSerializer.Serialize(siteLink));
+        return siteLink;
     }
     
     private Sitelink? ParseWikiData(string json, string id, string language) 

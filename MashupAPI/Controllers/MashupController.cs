@@ -6,23 +6,17 @@ namespace MashupAPI.Controllers;
 
 [ApiController]
 [Route("api/v1.0/[controller]")]
-public class MashupController(ILogger<MashupController> logger, IMashup mashup): ControllerBase
+public class MashupController(IMashup mashup): ControllerBase
 {
-    [HttpGet(Name = "GetArtistByMBID")]
+    [HttpGet(Name = "GetMashupByMBID")]
     [Produces("application/json")]
     [Consumes("application/json")]
     [ProducesResponseType(typeof(MashupResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> Get([FromQuery]Guid mbid)
+    public async Task<ActionResult> Get([FromQuery]string mbid)
     {
-        if(mbid == Guid.Empty)
-        {
-            return BadRequest("Invalid MBID");
-        }
-        
         var result = await mashup.GetMashupByMbid(mbid.ToString());
-        
         return result != null ? Ok(result): NotFound();
     }
 }

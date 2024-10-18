@@ -18,7 +18,11 @@ public class JsonValidator(ILogger<JsonValidator> logger) : IJsonValidator
         {
             var jsonSchema = JsonSchema.FromText(schema);
             var jsonNode = JsonNode.Parse(json);
-            var validationResult = jsonSchema.Evaluate(jsonNode, new EvaluationOptions { OutputFormat = OutputFormat.Hierarchical});
+            var validationResult = jsonSchema.Evaluate(jsonNode,
+                new EvaluationOptions
+                {
+                    OutputFormat = OutputFormat.Hierarchical
+                });
 
             if (validationResult.IsValid)
             {

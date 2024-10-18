@@ -1,7 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using MashupAPI.Entities.Wikipedia;
+using MashupAPI.Infrastructure.Cache;
 using MashupAPI.Infrastructure.Validator;
+using RestSharp;
 
 namespace MashupAPI.Services;
 
@@ -10,17 +13,28 @@ public interface IWikipedia
     Task<WikiResponse?> GetWikipediaPageByTitle(string title);
 }
 
-public class Wikipedia(ILogger<Wikipedia> logger, HttpClient httpClient, IJsonValidator validator) : IWikipedia
+public class Wikipedia(ILogger<Wikipedia> logger, IConfiguration configuration, IJsonValidator validator, IMashupMemoryCache cache) : IWikipedia
 {
     public async Task<WikiResponse?> GetWikipediaPageByTitle(string title)
     {
-        var response = await httpClient.GetAsync($"?action=query&format=json&prop=extracts&exintro=true&redirects=true&titles={title}");
+        var cacheKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(title));
+        var isCached = cache.TryGetValue($"Wiki:{cacheKey}", out WikiResponse? cachedWiki);
+        if (isCached) return cachedWiki;
+        
+        var restClient = new RestClient();
+        var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:Wikipedia") ?? "https://en.wikipedia.org/w/api.php");
+            
+        var request = new RestRequest($"{baseUrl}?action=query&format=json&prop=extracts&exintro=true&redirects=true&titles={title}", Method.Get);
+        request.AddHeader("User-Agent", "MashupAPI");
+        request.AddHeader("Accept", "application/json");
+        
+        var response = await restClient.GetAsync(request);
         if (!response.IsSuccessStatusCode)
         {
             logger.LogInformation($"Failed to get wikipage with title: {title}");
             return null;
         }
-        var content = await response.Content.ReadAsStringAsync();
+        var content = response.Content ?? string.Empty;
         var (result, details, errors) = validator.ValidateJson(WikipediaSchema.Schema, content);
         
         if(!result)
@@ -28,8 +42,10 @@ public class Wikipedia(ILogger<Wikipedia> logger, HttpClient httpClient, IJsonVa
             logger.LogInformation($"Failed to validate JSON: {details} {errors}");
             return null;
         }
-
-        return ParseWikiData(content);
+        
+        var wikiData = ParseWikiData(content);
+        cache.Set($"Wiki:{cacheKey}", JsonSerializer.Serialize(wikiData));
+        return wikiData;
     }
     
     private WikiResponse ParseWikiData(string json) 

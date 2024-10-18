@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using FluentAssertions;
 using MashupAPI.Entities.CoverartArchive;
+using MashupAPI.Infrastructure.Cache;
 using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
@@ -16,11 +17,15 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
     private readonly CoverartArchiveServiceFixture _fixture;
     private readonly ILogger<CoverArtArchive> _logger;
     private readonly HttpClient _httpClient;
+    private readonly IMashupMemoryCache _cache;
 
     public CoverArtArchiveTests(CoverartArchiveServiceFixture fixture)
     {
         _fixture = fixture;
         _logger = Substitute.For<ILogger<CoverArtArchive>>();
+        _cache = Substitute.For<IMashupMemoryCache>();
+        _cache.TryGetValue(Arg.Any<string>(), out Arg.Any<CoverArtResponse?>()).Returns(false);
+        
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(_fixture.CoverartArchiveResponse)
@@ -40,13 +45,13 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         //Given
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
-        var client = new CoverArtArchive(_logger, _httpClient, validator);
+        var client = new CoverArtArchive(_logger, _httpClient, validator, _cache);
         
         //when
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
         
         //Then
-        result.Images.First().ImageUrl.Should().Be("http://coverartarchive.org/release/f268b8bc-2768-426b-901b-c7966e76de29/12750224075.png");
+        result?.Images[0].ImageUrl.Should().Be("http://coverartarchive.org/release/f268b8bc-2768-426b-901b-c7966e76de29/12750224075.png");
     }
     
     [Fact]
@@ -65,7 +70,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
 
-        var client = new CoverArtArchive(_logger, httpClient, validator);
+        var client = new CoverArtArchive(_logger, httpClient, validator, _cache);
         
         //When
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
@@ -90,7 +95,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", "something else"));
 
-        var client = new CoverArtArchive(_logger, httpClient, validator);
+        var client = new CoverArtArchive(_logger, httpClient, validator, _cache);
         
         //When
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
@@ -115,7 +120,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", "something else"));
         
-        var client = new CoverArtArchive(_logger, httpClient, validator);
+        var client = new CoverArtArchive(_logger, httpClient, validator, _cache);
         
         //When
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");

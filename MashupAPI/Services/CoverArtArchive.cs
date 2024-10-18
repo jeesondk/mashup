@@ -1,28 +1,40 @@
 ﻿using System.Text.Json;
 using MashupAPI.Entities.CoverartArchive;
+using MashupAPI.Infrastructure.Cache;
 using MashupAPI.Infrastructure.Validator;
+using RestSharp;
 
 namespace MashupAPI.Services;
 
 public interface ICoverArtArchive
 {
-    Task<CoverartResponse?> GetCoverArt(string id);
+    Task<CoverArtResponse?> GetCoverArt(string id);
 }
 
-public class CoverArtArchive(ILogger<CoverArtArchive> logger, HttpClient httpClient, IJsonValidator jsonValidator) : ICoverArtArchive
+public class CoverArtArchive(ILogger<CoverArtArchive> logger, IConfiguration configuration, IJsonValidator jsonValidator, IMashupMemoryCache cache) : ICoverArtArchive
 {
-    public async Task<CoverartResponse?> GetCoverArt(string id)
+    public async Task<CoverArtResponse?> GetCoverArt(string id)
     {
         try
         {
-            var response = await httpClient.GetAsync($"/release-group//{id}");
+            var isCached = cache.TryGetValue($"CoverArt:{id}", out CoverArtResponse? cachedCoverArt);
+            if (isCached) return cachedCoverArt;
+            
+            var restClient = new RestClient();
+            var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:CoverArtArchive") ?? "https://coverartarchive.org");
+            
+            var request = new RestRequest($"{baseUrl}/release-group/{id}", Method.Get);
+            request.AddHeader("User-Agent", "MashupAPI");
+            request.AddHeader("Accept", "application/json");
+            
+            var response = await restClient.GetAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogInformation($"Failed to get cover art for release with id {id}");
                 return null;
             }
 
-            var content = await response.Content.ReadAsStringAsync();
+            var content = response.Content ?? string.Empty;
             var (result, details, errors) = jsonValidator.ValidateJson(CoverartSchema.Schema, content);
             
             if(!result)
@@ -30,10 +42,8 @@ public class CoverArtArchive(ILogger<CoverArtArchive> logger, HttpClient httpCli
                 logger.LogInformation($"Failed to validate JSON: {details} {errors}");
                 return null;
             }
-            
-            var coverArt = JsonSerializer.Deserialize<CoverartResponse>(content);
-
-            return coverArt;    
+            cache.Set($"CoverArt:{id}",content);
+            return JsonSerializer.Deserialize<CoverArtResponse>(content);
         }
         catch(Exception e)
         {

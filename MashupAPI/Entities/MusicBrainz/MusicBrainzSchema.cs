@@ -4,93 +4,34 @@ public static class MusicBrainzSchema
 {
     public const string Schema = """
                             {
-                            "$schema": "http://json-schema.org/draft-07/schema#",
-                            "title": "Generated schema for Root",
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "description": "",
                             "type": "object",
                             "properties": {
-                              "end-area": {},
-                              "begin-area": {
-                                "type": "object",
-                                "properties": {
-                                  "sort-name": {
-                                    "type": "string"
-                                  },
-                                  "name": {
-                                    "type": "string"
-                                  },
-                                  "type-id": {},
-                                  "type": {},
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "disambiguation": {
-                                    "type": "string"
-                                  }
-                                },
-                                "required": [
-                                  "sort-name",
-                                  "name",
-                                  "type-id",
-                                  "type",
-                                  "id",
-                                  "disambiguation"
-                                ]
-                              },
-                              "id": {
-                                "type": "string"
-                              },
-                              "type": {
-                                "type": "string"
-                              },
-                              "disambiguation": {
-                                "type": "string"
-                              },
-                              "sort-name": {
-                                "type": "string"
-                              },
-                              "area": {
-                                "type": "object",
-                                "properties": {
-                                  "type-id": {},
-                                  "sort-name": {
-                                    "type": "string"
-                                  },
-                                  "disambiguation": {
-                                    "type": "string"
-                                  },
-                                  "type": {},
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "name": {
-                                    "type": "string"
-                                  },
-                                  "iso-3166-1-codes": {
-                                    "type": "array",
-                                    "items": {
-                                      "type": "string"
-                                    }
-                                  }
-                                },
-                                "required": [
-                                  "type-id",
-                                  "sort-name",
-                                  "disambiguation",
-                                  "type",
-                                  "id",
-                                  "name",
-                                  "iso-3166-1-codes"
-                                ]
-                              },
-                              "type-id": {
-                                "type": "string"
+                              "name": {
+                                "type": "string",
+                                "minLength": 1
                               },
                               "relations": {
                                 "type": "array",
+                                "uniqueItems": true,
+                                "minItems": 1,
                                 "items": {
-                                  "type": "object",
+                                  "required": [
+                                    "target-type",
+                                    "target-credit",
+                                    "direction",
+                                    "source-credit",
+                                    "type-id",
+                                    "ended",
+                                    "type"
+                                  ],
                                   "properties": {
-                                    "type-id": {
+                                    "target-type": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "target-credit": {
                                       "type": "string"
                                     },
                                     "attribute-ids": {
@@ -98,173 +39,297 @@ public static class MusicBrainzSchema
                                       "properties": {},
                                       "required": []
                                     },
-                                    "url": {
-                                      "type": "object",
-                                      "properties": {
-                                        "resource": {
-                                          "type": "string"
-                                        },
-                                        "id": {
-                                          "type": "string"
-                                        }
-                                      },
-                                      "required": [
-                                        "resource",
-                                        "id"
-                                      ]
-                                    },
-                                    "attributes": {
-                                      "type": "array",
-                                      "items": {}
-                                    },
-                                    "type": {
-                                      "type": "string"
+                                    "direction": {
+                                      "type": "string",
+                                      "minLength": 1
                                     },
                                     "source-credit": {
                                       "type": "string"
                                     },
-                                    "end": {
-                                      "type": "string"
+                                    "attributes": {
+                                      "type": "array",
+                                      "items": {
+                                        "required": [],
+                                        "properties": {}
+                                      }
                                     },
-                                    "target-type": {
-                                      "type": "string"
+                                    "type-id": {
+                                      "type": "string",
+                                      "minLength": 1
                                     },
-                                    "target-credit": {
-                                      "type": "string"
-                                    },
-                                    "attribute-values": {
+                                    "url": {
                                       "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        },
+                                        "resource": {
+                                          "type": "string",
+                                          "minLength": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "resource"
+                                      ]
+                                    },
+                                    "end": {
+                                      "type": ["string", "null"],
                                       "properties": {},
                                       "required": []
                                     },
                                     "ended": {
                                       "type": "boolean"
                                     },
-                                    "direction": {
-                                      "type": "string"
+                                    "type": {
+                                      "type": "string",
+                                      "minLength": 1
                                     },
-                                    "begin": {}
-                                  },
-                                  "required": [
-                                    "type-id",
-                                    "attribute-ids",
-                                    "url",
-                                    "attributes",
-                                    "type",
-                                    "source-credit",
-                                    "target-type",
-                                    "target-credit",
-                                    "attribute-values",
-                                    "ended",
-                                    "direction",
-                                    "begin"
-                                  ]
-                                }
-                              },
-                              "country": {
-                                "type": "string"
-                              },
-                              "isnis": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string"
-                                }
-                              },
-                              "gender-id": {},
-                              "name": {
-                                "type": "string"
-                              },
-                              "release-groups": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "secondary-type-ids": {
-                                      "type": "array",
-                                      "items": {
-                                        "type": "string"
-                                      }
+                                    "begin": {
+                                      "type": ["string", "null"],
+                                      "properties": {},
+                                      "required": []
                                     },
-                                    "secondary-types": {
-                                      "type": "array",
-                                      "items": {
-                                        "type": "string"
-                                      }
-                                    },
-                                    "title": {
-                                      "type": "string"
-                                    },
-                                    "primary-type-id": {
-                                      "type": "string"
-                                    },
-                                    "id": {
-                                      "type": "string"
-                                    },
-                                    "primary-type": {
-                                      "type": "string"
-                                    },
-                                    "disambiguation": {
-                                      "type": "string"
-                                    },
-                                    "first-release-date": {
-                                      "type": "string"
+                                    "attribute-values": {
+                                      "type": "object",
+                                      "properties": {},
+                                      "required": []
                                     }
-                                  },
-                                  "required": [
-                                    "secondary-type-ids",
-                                    "secondary-types",
-                                    "title",
-                                    "primary-type-id",
-                                    "id",
-                                    "primary-type",
-                                    "disambiguation",
-                                    "first-release-date"
-                                  ]
+                                  }
                                 }
-                              },
-                              "gender": {},
-                              "ipis": {
-                                "type": "array",
-                                "items": {}
                               },
                               "life-span": {
                                 "type": "object",
                                 "properties": {
+                                  "begin": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
                                   "ended": {
                                     "type": "boolean"
                                   },
                                   "end": {
-                                    "type": "string"
-                                  },
-                                  "begin": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "minLength": 1
                                   }
                                 },
                                 "required": [
+                                  "begin",
                                   "ended",
-                                  "end",
-                                  "begin"
+                                  "end"
                                 ]
+                              },
+                              "disambiguation": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "isnis": {
+                                "type": "array",
+                                "items": {
+                                  "required": [],
+                                  "properties": {}
+                                }
+                              },
+                              "area": {
+                                "type": "object",
+                                "properties": {
+                                  "type": {
+                                    "type": ["object", "null"],
+                                    "properties": {},
+                                    "required": []
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "sort-name": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "iso-3166-1-codes": {
+                                    "type": "array",
+                                    "items": {
+                                      "required": [],
+                                      "properties": {}
+                                    }
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "disambiguation": {
+                                    "type": "string"
+                                  },
+                                  "type-id": {
+                                    "type": ["object", "null"],
+                                    "properties": {},
+                                    "required": []
+                                  }
+                                },
+                                "required": [
+                                  "type",
+                                  "name",
+                                  "sort-name",
+                                  "iso-3166-1-codes",
+                                  "id",
+                                  "disambiguation",
+                                  "type-id"
+                                ]
+                              },
+                              "sort-name": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "release-groups": {
+                                "type": "array",
+                                "uniqueItems": true,
+                                "minItems": 1,
+                                "items": {
+                                  "required": [
+                                    "primary-type",
+                                    "title",
+                                    "id",
+                                    "first-release-date",
+                                    "disambiguation",
+                                    "primary-type-id"
+                                  ],
+                                  "properties": {
+                                    "primary-type": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "title": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "secondary-type-ids": {
+                                      "type": "array",
+                                      "items": {
+                                        "required": [],
+                                        "properties": {}
+                                      }
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "first-release-date": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    },
+                                    "secondary-types": {
+                                      "type": "array",
+                                      "items": {
+                                        "required": [],
+                                        "properties": {}
+                                      }
+                                    },
+                                    "disambiguation": {
+                                      "type": "string"
+                                    },
+                                    "primary-type-id": {
+                                      "type": "string",
+                                      "minLength": 1
+                                    }
+                                  }
+                                }
+                              },
+                              "type": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "end-area": {
+                                "type": ["object", "null"],
+                                "properties": {},
+                                "required": []
+                              },
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "country": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "gender-id": {
+                                "type": ["object", "null"],
+                                "properties": {},
+                                "required": []
+                              },
+                              "ipis": {
+                                "type": "array",
+                                "items": {
+                                  "required": [],
+                                  "properties": {}
+                                }
+                              },
+                              "gender": {
+                                "type": ["object", "null"],
+                                "properties": {},
+                                "required": []
+                              },
+                              "begin-area": {
+                                "type": "object",
+                                "properties": {
+                                  "sort-name": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "type": {
+                                    "type": ["object", "null"],
+                                    "properties": {},
+                                    "required": []
+                                  },
+                                  "disambiguation": {
+                                    "type": "string"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  },
+                                  "type-id": {
+                                    "type": ["object", "null"],
+                                    "properties": {},
+                                    "required": []
+                                  }
+                                },
+                                "required": [
+                                  "sort-name",
+                                  "name",
+                                  "type",
+                                  "disambiguation",
+                                  "id",
+                                  "type-id"
+                                ]
+                              },
+                              "type-id": {
+                                "type": "string",
+                                "minLength": 1
                               }
                             },
                             "required": [
-                              "end-area",
-                              "begin-area",
-                              "id",
-                              "type",
-                              "disambiguation",
-                              "sort-name",
-                              "area",
-                              "type-id",
-                              "relations",
-                              "country",
-                              "isnis",
-                              "gender-id",
                               "name",
+                              "relations",
+                              "life-span",
+                              "disambiguation",
+                              "isnis",
+                              "area",
+                              "sort-name",
                               "release-groups",
-                              "gender",
+                              "type",
+                              "end-area",
+                              "id",
+                              "country",
+                              "gender-id",
                               "ipis",
-                              "life-span"
+                              "gender",
+                              "begin-area",
+                              "type-id"
                             ]
                           }
                           """;

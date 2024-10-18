@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using FluentAssertions;
 using MashupAPI.Entities.Wikipedia;
+using MashupAPI.Infrastructure.Cache;
 using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
@@ -16,11 +17,15 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
     private readonly WikipediaServiceFixture _fixture;
     private readonly ILogger<Wikipedia> _logger;
     private readonly HttpClient _httpClient;
+    private readonly IMashupMemoryCache _cache;
 
     public WikipediaTests(WikipediaServiceFixture fixture)
     {
         _fixture = fixture;
         _logger = Substitute.For<ILogger<Wikipedia>>();
+        _cache = Substitute.For<IMashupMemoryCache>();
+        _cache.TryGetValue(Arg.Any<string>(), out Arg.Any<WikiResponse?>()).Returns(false);
+        
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(_fixture.WikipediaResponse)
@@ -41,7 +46,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new Wikipedia(_logger, _httpClient, validator);
+        var client = new Wikipedia(_logger, _httpClient, validator, _cache);
         
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
@@ -68,7 +73,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
         
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator);
+        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator, _cache);
         
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
@@ -93,7 +98,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
 
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator);
+        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator, _cache);
 
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
@@ -118,7 +123,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, string.Empty, string.Empty));
 
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator);
+        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator, _cache);
 
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
