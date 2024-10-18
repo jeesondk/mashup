@@ -13,7 +13,7 @@ public interface IWikipedia
     Task<WikiResponse?> GetWikipediaPageByTitle(string title);
 }
 
-public class Wikipedia(ILogger<Wikipedia> logger, IConfiguration configuration, IJsonValidator validator, IMashupMemoryCache cache) : IWikipedia
+public class Wikipedia(ILogger<Wikipedia> logger, IConfiguration configuration, RestClient client, IJsonValidator validator, IMashupMemoryCache cache) : IWikipedia
 {
     public async Task<WikiResponse?> GetWikipediaPageByTitle(string title)
     {
@@ -21,14 +21,10 @@ public class Wikipedia(ILogger<Wikipedia> logger, IConfiguration configuration, 
         var isCached = cache.TryGetValue($"Wiki:{cacheKey}", out WikiResponse? cachedWiki);
         if (isCached) return cachedWiki;
         
-        var restClient = new RestClient();
         var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:Wikipedia") ?? "https://en.wikipedia.org/w/api.php");
-            
         var request = new RestRequest($"{baseUrl}?action=query&format=json&prop=extracts&exintro=true&redirects=true&titles={title}", Method.Get);
-        request.AddHeader("User-Agent", "MashupAPI");
-        request.AddHeader("Accept", "application/json");
         
-        var response = await restClient.GetAsync(request);
+        var response = await client.GetAsync(request);
         if (!response.IsSuccessStatusCode)
         {
             logger.LogInformation($"Failed to get wikipage with title: {title}");

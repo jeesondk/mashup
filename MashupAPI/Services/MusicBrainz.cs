@@ -13,7 +13,7 @@ public interface IMusicBrainz
     string GetWikipediaRelation(MusicBrainzResponse entity);
 }
 
-public class MusicBrainz(ILogger<MusicBrainz> logger, IConfiguration configuration, IJsonValidator jsonValidator, IMashupMemoryCache cache) : IMusicBrainz
+public class MusicBrainz(ILogger<MusicBrainz> logger, IConfiguration configuration, RestClient client, IJsonValidator jsonValidator, IMashupMemoryCache cache) : IMusicBrainz
 {
     public async Task<MusicBrainzResponse?> GetArtist(string artistId)
     {
@@ -22,14 +22,10 @@ public class MusicBrainz(ILogger<MusicBrainz> logger, IConfiguration configurati
             var isCached = cache.TryGetValue($"Artist:{artistId}", out MusicBrainzResponse? cachedArtist);
             if (isCached) return cachedArtist;
             
-            var restClient = new RestClient();
             var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:MusicBrainz") ?? "https://musicbrainz.org/ws/2");
-            
             var request = new RestRequest($"{baseUrl}/artist/{artistId}?&fmt=json&inc=url-rels+release-groups", Method.Get);
-            request.AddHeader("User-Agent", "MashupAPI");
-            request.AddHeader("Accept", "application/json");
             
-            var response = await restClient.GetAsync(request);
+            var response = await client.GetAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 logger.LogInformation($"Failed to get artist with id {artistId}");

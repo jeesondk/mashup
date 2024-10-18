@@ -14,21 +14,17 @@ public interface IWikiData
     string GetWikipediaTitle(Sitelink entity);
 }
 
-public class WikiData(ILogger<WikiData> logger, IConfiguration configuration, IJsonValidator validator, IMashupMemoryCache cache) : IWikiData
+public class WikiData(ILogger<WikiData> logger, IConfiguration configuration, RestClient client, IJsonValidator validator, IMashupMemoryCache cache) : IWikiData
 {
     public async Task<Sitelink?> GetWikiDataById(string id, string language = "en")
     {
         var isCached = cache.TryGetValue($"WikiData:{id}", out Sitelink? cachedWikiData);
         if (isCached) return cachedWikiData;
         
-        var restClient = new RestClient();
         var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:WikiData") ?? "https://www.wikidata.org/w/api.php");
-            
         var request = new RestRequest($"{baseUrl}?action=wbgetentities&format=json&ids={id}&props=sitelinks", Method.Get);
-        request.AddHeader("User-Agent", "MashupAPI");
-        request.AddHeader("Accept", "application/json");
         
-        var response = await restClient.GetAsync(request);
+        var response = await client.GetAsync(request);
         if (!response.IsSuccessStatusCode)
         {
             logger.LogInformation($"Failed to get artist with id {id}");

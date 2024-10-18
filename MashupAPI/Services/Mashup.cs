@@ -35,13 +35,15 @@ public class Mashup(ILogger<Mashup> logger, IMusicBrainz musicBrainz, IWikiData 
     
     private async Task<List<Album>> BuildAlbums(IReadOnlyList<ReleaseGroup> releaseGroups)
     {
-        var albums = new List<Album>();
+        var coverArtTasks = releaseGroups.Select( release => GetCoverArtArchive(release.Id)).ToArray();
+        await Task.WhenAll(coverArtTasks);
+        
+        var coverArts = coverArtTasks.Select( result => result.Result).ToList();
 
-        foreach (var release in releaseGroups)
-        {
-            var coverArt = await GetCoverArtArchive(release.Id);
-            albums.Add(new Album(release.Id, release.Title, coverArt?.Images[0].ImageUrl ?? string.Empty));
-        }
+        var albums = (from release in releaseGroups 
+            let coverArt = coverArts.FirstOrDefault(art => art?.Release == release.Id) 
+            select new Album(release.Id, release.Title, coverArt?.Images[0].ImageUrl ?? string.Empty))
+            .ToList();
 
         return albums;
     }

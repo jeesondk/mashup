@@ -3,6 +3,7 @@ using MashupAPI.Services;
 using MashupAPI.Infrastructure.Policies;
 using MashupAPI.Infrastructure.Validator;
 using Microsoft.OpenApi.Models;
+using RestSharp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,19 @@ builder.Services.AddLogging(logger =>
     logger.AddDebug();
 });
 
+builder.Services.AddHttpClient("RestSharpClient")
+    .AddPolicyHandler(HttpClientPolicies.GetRetryPolicy());
+
 builder.Services.AddSingleton<IMashupMemoryCache, MashupMemoryCache>();
+builder.Services.AddSingleton<RestClient>(provider =>
+{
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("RestSharpClient");
+    var client = new RestClient(httpClient);
+    client.AddDefaultHeader("User-Agent", "MashupAPI");
+    client.AddDefaultHeader("Accept", "application/json");
+    return client;
+});
 
 builder.Services.AddTransient<IJsonValidator, JsonValidator>();
 builder.Services.AddTransient<IMusicBrainz, MusicBrainz>();

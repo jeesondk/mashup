@@ -6,8 +6,10 @@ using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
 
@@ -16,8 +18,9 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
 {
     private readonly CoverartArchiveServiceFixture _fixture;
     private readonly ILogger<CoverArtArchive> _logger;
-    private readonly HttpClient _httpClient;
+    private readonly RestClient _restClient;
     private readonly IMashupMemoryCache _cache;
+    private readonly IConfiguration _configuration;
 
     public CoverArtArchiveTests(CoverartArchiveServiceFixture fixture)
     {
@@ -26,17 +29,21 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         _cache = Substitute.For<IMashupMemoryCache>();
         _cache.TryGetValue(Arg.Any<string>(), out Arg.Any<CoverArtResponse?>()).Returns(false);
         
+        var inMemorySettings = new Dictionary<string, string>
+        {
+            {"Cache:SlidingExpiration", "60"}
+        };
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings!)
+            .Build();
+        
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(_fixture.CoverartArchiveResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri(" https://coverartarchive.org");
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        _httpClient = httpClientFactory.CreateClient("testClient");
+        _restClient = new RestClient(httpClient);
     }
 
     [Fact]
@@ -45,7 +52,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         //Given
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
-        var client = new CoverArtArchive(_logger, _httpClient, validator, _cache);
+        var client = new CoverArtArchive(_logger, _configuration, _restClient, validator, _cache);
         
         //when
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
@@ -70,7 +77,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
 
-        var client = new CoverArtArchive(_logger, httpClient, validator, _cache);
+        var client = new CoverArtArchive(_logger, _configuration, _restClient,validator, _cache);
         
         //When
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
@@ -95,7 +102,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", "something else"));
 
-        var client = new CoverArtArchive(_logger, httpClient, validator, _cache);
+        var client = new CoverArtArchive(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");
@@ -120,7 +127,7 @@ public class CoverArtArchiveTests: IClassFixture<CoverartArchiveServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", "something else"));
         
-        var client = new CoverArtArchive(_logger, httpClient, validator, _cache);
+        var client = new CoverArtArchive(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = await client.GetCoverArt("c31a5e2b-0bf8-32e0-8aeb-ef4ba9973932");

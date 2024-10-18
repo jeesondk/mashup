@@ -6,8 +6,10 @@ using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
 
@@ -16,8 +18,9 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
 {
     private readonly WikipediaServiceFixture _fixture;
     private readonly ILogger<Wikipedia> _logger;
-    private readonly HttpClient _httpClient;
+    private readonly RestClient _restClient;
     private readonly IMashupMemoryCache _cache;
+    private readonly IConfigurationRoot _configuration;
 
     public WikipediaTests(WikipediaServiceFixture fixture)
     {
@@ -26,17 +29,21 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
         _cache = Substitute.For<IMashupMemoryCache>();
         _cache.TryGetValue(Arg.Any<string>(), out Arg.Any<WikiResponse?>()).Returns(false);
         
+        var inMemorySettings = new Dictionary<string, string>
+        {
+            {"Cache:SlidingExpiration", "60"}
+        };
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings!)
+            .Build();
+        
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(_fixture.WikipediaResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        _httpClient = httpClientFactory.CreateClient("testClient");
+        _restClient = new RestClient(httpClient);
     }
     
     [Fact]
@@ -46,7 +53,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new Wikipedia(_logger, _httpClient, validator, _cache);
+        var client = new Wikipedia(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
@@ -66,14 +73,15 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
             Content = new StringContent(_fixture.WikipediaMalformedResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
-        var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        var httpClientMock = new HttpClient(mockHandler);
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClientMock);
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
+        var httpClient = httpClientFactory.CreateClient("MalformedResponse");
+        var restClient = new RestClient(httpClient);
         
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator, _cache);
+        var client = new Wikipedia(_logger, _configuration, restClient, validator, _cache);
         
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
@@ -91,14 +99,15 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
             Content = new StringContent(string.Empty)
         };
         var mockHandler = new MockHttpMessageHandler(response);
-        var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        var httpClientMock = new HttpClient(mockHandler);
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClientMock);
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
-
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator, _cache);
+        var httpClient = httpClientFactory.CreateClient("ErrorResponse");
+        var restClient = new RestClient(httpClient);
+            
+        var client = new Wikipedia(_logger, _configuration, restClient, validator, _cache);
 
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
@@ -116,14 +125,16 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
             Content = new StringContent(_fixture.WikipediaNoContentResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
-        var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://en.wikipedia.org/w/api.php");
+        var httpClientMock = new HttpClient(mockHandler);
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClientMock);
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, string.Empty, string.Empty));
+        
+        var httpClient = httpClientFactory.CreateClient("NotFound");
+        var restClient = new RestClient(httpClient);
 
-        var client = new Wikipedia(_logger, httpClientFactory.CreateClient("MalformedResponse"), validator, _cache);
+        var client = new Wikipedia(_logger, _configuration, restClient, validator, _cache);
 
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");

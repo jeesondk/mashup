@@ -8,8 +8,10 @@ using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
 
@@ -18,15 +20,23 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
 {
     private readonly MusicBrainzServiceFixture _fixture;
     private readonly ILogger<MusicBrainz> _logger;
-    private readonly HttpClient _httpClient;
+    private readonly RestClient _restClient;
     private readonly IMashupMemoryCache _cache;
-    
+    private readonly IConfigurationRoot _configuration;
+
     public MusicBrainzTests(MusicBrainzServiceFixture fixture)
     {
         _fixture = fixture;
         _logger = Substitute.For<ILogger<MusicBrainz>>();
         _cache = Substitute.For<IMashupMemoryCache>();
         _cache.TryGetValue(Arg.Any<string>(), out Arg.Any<MusicBrainzResponse?>()).Returns(false);
+        var inMemorySettings = new Dictionary<string, string>
+        {
+            {"Cache:SlidingExpiration", "60"}
+        };
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings!)
+            .Build();
         
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -34,11 +44,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://musicbrainz.org/ws/2");
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-
-        _httpClient = httpClientFactory.CreateClient("testClient");
+        _restClient = new RestClient(httpClient);
     }
 
     [Fact]
@@ -47,7 +53,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         //Given
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
-        var client = new MusicBrainz(_logger, _httpClient, validator, _cache);
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
@@ -67,14 +73,17 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
             Content = new StringContent("Not Found")
         };
         var mockHandler = new MockHttpMessageHandler(response);
-        var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://musicbrainz.org/ws/2");
+        var httpClientMock = new HttpClient(mockHandler);
+        
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClientMock);
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
+
+        var httpClient = httpClientFactory.CreateClient("FailingTestClient");
+        var restClient = new RestClient(httpClient);
         
-        var client = new MusicBrainz(_logger, httpClientFactory.CreateClient("FailingTestClient"), validator, _cache);
+        var client = new MusicBrainz(_logger, _configuration, restClient, validator, _cache);
         
         //When
         var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
@@ -90,7 +99,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new MusicBrainz(_logger, _httpClient, validator, _cache);
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
         var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzResponse);
         
         //When
@@ -108,7 +117,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new MusicBrainz(_logger, _httpClient, validator, _cache);
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
         var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzNoRelationsResponse);
         
         //When
@@ -126,7 +135,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new MusicBrainz(_logger, _httpClient, validator, _cache);
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
         var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzResponse);
         
         //When
@@ -143,7 +152,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         //Given
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
-        var client = new MusicBrainz(_logger, _httpClient, validator, _cache);
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
         var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzNoRelationsResponse);
         
         //When

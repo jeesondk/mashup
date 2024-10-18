@@ -6,37 +6,46 @@ using MashupAPI.Infrastructure.Validator;
 using MashupAPI.Services;
 using MashupAPI.Tests.UnitTests.Fixtures;
 using MashupAPI.Tests.UnitTests.Mocks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
 
 [Trait("Category", "Unit")]
 public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
 {
-    private readonly WikiDataServiceFixture _fixture;
     private readonly ILogger<WikiData> _logger;
-    private readonly HttpClient _httpClient;
     private readonly IMashupMemoryCache _cache;
+    private readonly IConfiguration _configuration;
+    private readonly RestClient _restClient;
 
     public WikiDataTests(WikiDataServiceFixture fixture)
     {
-        _fixture = fixture;
         _logger = Substitute.For<ILogger<WikiData>>();
         _cache = Substitute.For<IMashupMemoryCache>();
         _cache.TryGetValue(Arg.Any<string>(), out Arg.Any<Sitelink?>()).Returns(false);
         
+        var inMemorySettings = new Dictionary<string, string>
+        {
+            {"Cache:SlidingExpiration", "60"}
+        };
+        _configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings!)
+            .Build();
+        
         var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent(_fixture.WikiDataResponse)
+            Content = new StringContent(fixture.WikiDataResponse)
         };
         var mockHandler = new MockHttpMessageHandler(response);
-        var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://www.wikidata.org/w/api.php");
+        var httpClientMock = new HttpClient(mockHandler);
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClientMock);
 
-        _httpClient = httpClientFactory.CreateClient("testClient");
+        var httpClient = httpClientFactory.CreateClient("testClient");
+        _restClient = new RestClient(httpClient);
     }
 
     [Theory]
@@ -49,7 +58,7 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new WikiData(_logger, _httpClient, validator, _cache);
+        var client = new WikiData(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = await client.GetWikiDataById(id, language);
@@ -66,7 +75,7 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
 
-        var client = new WikiData(_logger, _httpClient, validator, _cache);
+        var client = new WikiData(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = await client.GetWikiDataById("jkldnrfg", "en");
@@ -85,13 +94,12 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         };
         var mockHandler = new MockHttpMessageHandler(response);
         var httpClient = new HttpClient(mockHandler);
-        httpClient.BaseAddress = new Uri("https://www.wikidata.org/w/api.php");
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
         
-        var client = new WikiData(_logger, httpClientFactory.CreateClient("testClient"), validator, _cache);
+        var restClient = new RestClient(httpClient);
+        
+        var client = new WikiData(_logger, _configuration, restClient, validator, _cache);
         
         //When
         var result = await client.GetWikiDataById("Q11649");
@@ -108,7 +116,7 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new WikiData(_logger, _httpClient, validator, _cache);
+        var client = new WikiData(_logger, _configuration, _restClient, validator, _cache);
         
         
         //When
@@ -126,7 +134,7 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         var validator = Substitute.For<IJsonValidator>();
         validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((true, string.Empty, string.Empty));
         
-        var client = new WikiData(_logger, _httpClient, validator, _cache);
+        var client = new WikiData(_logger, _configuration, _restClient, validator, _cache);
         
         //When
         var result = client.GetWikipediaTitle(entity);
