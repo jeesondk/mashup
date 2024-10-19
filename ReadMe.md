@@ -11,7 +11,45 @@ Unfortunately I was not able to find a solution that I could implement without a
 
 My code is based on the task assignment provided, with the needed error handling to make it work.
 
+See section [Configurations](#Configurations)
+
+## Task
+
+Build a REST API that consumes and combines information from:
+- MusicBrainz
+- Wikidata
+- Wikipedia
+- Cover Art Archive
+
+## Requirements
+
+### Functional
+- The API should accept an MBID (MusicBrainz Identifier) and respond with a json object
+containing:
+ - The MBID of the artist
+ - A description of the artist as provided by Wikipedia. Note that wikipedia does not have any notion about MBIDs. This relation is provided by MusicBrainz.
+ - A list of all the albums that the artist has released together with an url for the cover image of each album. The list of albums is provided by MusicBrainz, but all the images are provided by Cover Art
+
+
+### Non-functional requirements
+- The API should respond with all of the data as quickly as possible. This can be
+challenging because some of the external APIs can be slow. Some of them even enforce rate limits.
+Solution should be production ready
+- Document areas of improvement if any
+- The code should follow best practices
+- The code should be maintainable
+- A README must be included and contain examples of how the application is built, installed, run and used
+
 ## Systems design
+
+### Language
+
+- C# 12, .NET 8
+
+### Frameworks
+
+- ASP.NET Core MVC
+
 
 ### High-level design
 <Add diagramm>
@@ -58,12 +96,49 @@ dotnet test /p:CollectCoverage=true /p:ExcludeByFile="**/Program.cs" /p:Exclude=
 
 ## Running Solution
 
+### Configurations
+
+#### Release build
+
+appsettings.json
+```json
+...
+  "APIEndpoints": {
+    "MusicBrainz": "https://musicbrainz.org/ws/2",
+    "CoverArtArchive": "https://coverartarchive.org",
+    "Wikipedia": "https://en.wikipedia.org/w/api.php",
+    "WikiData": "https://www.wikidata.org/w/api.php"
+  },
+  "Cache": {
+    "SlidingExpiration": 86400 //Time in seconds
+  },
+  "DisableCoverArt": true, //Cover Art workaround, this flag allows the code to skip getting the image URL's from Covera Art Archive and will return "" as image URL. 
+...
+```
+
+#### Development build
+
+appsettings.development.json
+```json
+...
+  "APIEndpoints": {
+    "MusicBrainz": "https://musicbrainz.org/ws/2",
+    "CoverArtArchive": "https://coverartarchive.org",
+    "Wikipedia": "https://en.wikipedia.org/w/api.php",
+    "WikiData": "https://www.wikidata.org/w/api.php"
+  },
+  "Cache": {
+    "SlidingExpiration": 120 //Time in seconds
+  },
+  "DisableCoverArt": true, //Cover Art workaround, this flag allows the code to skip getting the image URL's from Covera Art Archive and will return "" as image URL. 
+...
+```
+
 ### Running from shell
 
 ```bash
 dotnet run --project .\MashupAPI\MashupAPI.csproj
 ```
-
 
 ### Running with Docker Compose
 
