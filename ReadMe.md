@@ -94,11 +94,11 @@ MashupAPI
 ### Solution Description
 
 #### High-level design
-![MashupAPI Overview](img\MashupAPI.Overview.svg "MashupAPI Overview")
+![MashupAPI Overview](img/MashupAPI.Overview.svg "MashupAPI Overview")
 
 
 #### Steps & Flows
-![MashupAPI FLow](img\MashupAPI.Flow.svg "MashupAPI Flow")
+![MashupAPI FLow](img/MashupAPI.Flow.svg "MashupAPI Flow")
 
 #### Thoughts and Strategies
 
