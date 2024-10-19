@@ -9,9 +9,8 @@ The solution has the implementation to pull cover images, but will return empty 
 I looked for free alternativs to implement, that would not deviate from the approach of using rest API,
 Unfortunately I was not able to find a solution that I could implement without a huge re-design and that were free to use.
 
-My code is based on the task assignment provided, with the needed error handling to make it work.
+As a way to handle this, the code return "" instead of the image URL when the RestCall fails
 
-See section [Configurations](#Configurations)
 
 ## Task
 
@@ -60,18 +59,30 @@ Solution should be production ready
 <Add Sequence diagram>
 
 
-### Tools
+### Tools & Pacakages
+
+### Application Tools & Packages
+
 - Microsoft.Extensions.Caching.Memory
+- Microsoft.Extensions.Http
+- Microsoft.Extensions.Http.Polly
 - RestSharp
 - Polly
+- Polly.Extensions
 - JsonSchema.NET
+- Swashbuckle.AspNetCore
 
+#### Test Tools & Packages
 
-#### Test Tools
-- Nsubstitute - Mocks, Fakes & Stubs
-- FluentAssertions - Test result assertions
 - Coverlet.Collector
 - Coverlet.MsBuild
+- FluentAssertions
+- Microsoft.AspNetCore.Mvc.Testing
+- Microsoft.NET.Test.Sdk
+- Nsubstitute
+- xunit
+- xunit.runner.visualstudio
+
 
 
 ## Building solution

@@ -11,7 +11,7 @@ public interface IMashup
     Task<MashupResponse?> GetMashupByMbid(string mbid);
 }
 
-public class Mashup(ILogger<Mashup> logger, IConfiguration configuration, IMusicBrainz musicBrainz, IWikiData wikiData, ICoverArtArchive coverArtArchive, IWikipedia wikipedia): IMashup
+public class Mashup(ILogger<Mashup> logger, IMusicBrainz musicBrainz, IWikiData wikiData, ICoverArtArchive coverArtArchive, IWikipedia wikipedia): IMashup
 {
     
     public async Task<MashupResponse?> GetMashupByMbid(string id)
@@ -47,13 +47,6 @@ public class Mashup(ILogger<Mashup> logger, IConfiguration configuration, IMusic
 
     private async Task<List<Album>> BuildAlbums(IReadOnlyList<ReleaseGroup> releaseGroups)
     {
-        var disableCoverArt = configuration.GetValue<bool>("DisableCoverArt");
-        
-        if(disableCoverArt)
-        {
-            return releaseGroups.Select(release => new Album(release.Id, release.Title, string.Empty)).ToList();
-        }
-        
         var coverArtTasks = releaseGroups.Select( release => GetCoverArtArchive(release.Id)).ToArray();
         await Task.WhenAll(coverArtTasks);
         
