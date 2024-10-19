@@ -41,6 +41,23 @@ Solution should be production ready
 
 ## Systems design
 
+### Solution Layout
+
+MashupAPI
+|- Controllers          #Rest Controllers
+|-  Entities            #Data models & JsonSchemas
+    |- CoverArtArchive
+    |- Mashup
+    |- MusicBrainz
+    |- WikiData
+    |- Wikipedia
+|- Infrastructure
+    |- Cache            #MemoryCache
+    |- Policies         #Http Retry Policy
+    |- Validators       #JsonSchame validation
+|- Services             #Buisness logic
+
+
 ### Language
 
 - C# 12, .NET 8
