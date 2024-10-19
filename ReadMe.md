@@ -112,14 +112,14 @@ donet build
 ### Run Unit test suite
 
 ```bash
-dotnet test /p:CollectCoverage=true /p:ExcludeByFile="**/Program.cs" /p:Exclude="[MashupAPI.Tests.*]*" --filter "Category=Unit"
+dotnet test /p:CollectCoverage=true /p:ExcludeByFile="**/Program.cs" --filter "Category=Unit"
 ```
 
 ### Run Integration test suite
 
 This test suite requires that you have intenet access!
 ```bash
-dotnet test /p:CollectCoverage=true /p:ExcludeByFile="**/Program.cs" /p:Exclude="[MashupAPI.Tests.*]*" --filter "Category=Integration"
+dotnet test /p:CollectCoverage=true /p:ExcludeByFile="**/Program.cs" --filter "Category=Integration"
 ```
 
 ## Running Solution
@@ -139,8 +139,7 @@ appsettings.json
   },
   "Cache": {
     "SlidingExpiration": 86400 //Time in seconds
-  },
-  "DisableCoverArt": true, //Cover Art workaround, this flag allows the code to skip getting the image URL's from Covera Art Archive and will return "" as image URL. 
+  }
 ...
 ```
 
@@ -157,8 +156,7 @@ appsettings.development.json
   },
   "Cache": {
     "SlidingExpiration": 120 //Time in seconds
-  },
-  "DisableCoverArt": true, //Cover Art workaround, this flag allows the code to skip getting the image URL's from Covera Art Archive and will return "" as image URL. 
+  }
 ...
 ```
 
@@ -167,6 +165,99 @@ appsettings.development.json
 ```bash
 dotnet run --project .\MashupAPI\MashupAPI.csproj
 ```
+
+### Building Container image
+
+To build the docker image directly from source, please use one of the following two options
+
+#### Docker
+
+```bash
+docker build -t mashup-api:latest
+```
+
+#### Podman
+```bash
+podman build -t mashup-api:latest
+```
+
+### Running the Container image
+
+### Docker
+
+#### Production mode
+
+NB! This does not have a swagger endpoint
+
+```bash
+docker run -e ASPNETCORE_ENVIRONMENT=Production -p 8080:8080 mashup-api:latest
+```
+##### Call API
+```bash
+curl -X GET "http://localhost:8080/api/v1.0/Mashup?mbid=a466c2a2-6517-42fb-a160-1087c3bafd9f"
+
+```
+
+#### Development mode
+
+```bash
+docker run -e ASPNETCORE_ENVIRONMENT=Development -p 8080:8080 mashup-api:latest
+```
+
+##### Open Swagger
+
+[Mashup API Swagger](http://localhost:8080/swagger/index.html)
+
+
+### Podman
+
+
+#### Production mode
+
+NB! This does not have a swagger endpoint
+
+```bash
+podman run -e ASPNETCORE_ENVIRONMENT=Production -p 8080:8080 mashup-api:latest
+```
+##### Call API
+```bash
+curl -X GET "http://localhost:8080/api/v1.0/Mashup?mbid=a466c2a2-6517-42fb-a160-1087c3bafd9f"
+
+```
+
+#### Development mode
+
+```bash
+podman run -e ASPNETCORE_ENVIRONMENT=Development -p 8080:8080 mashup-api:latest
+```
+
+##### Open Swagger
+
+[Mashup API Swagger](http://localhost:8080/swagger/index.html)
+
+
+### Running with Compose file
+
+The compose file in this project build the code and package the docker image before starting the container
+
+#### Setting ASPNETCORE_ENVIRONMENT
+
+The compose file already sets the ASPNETCORE_ENVIRONMENT to Production, this disabled the Swagger endpoint.
+
+To change this to Development and enable the swagger endpoint please update the file docker-compose.yml from this
+```yaml
+...
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+...
+
+```
+to this
+```yaml
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+```
+Remember to tear down previous version with "docker-compose" down or "podman compose down"
 
 ### Running with Docker Compose
 
@@ -180,6 +271,7 @@ docker-compose down
 ```
 
 ### Running with Podman Compose
+
 ```bash
 podman compose up
 ```
