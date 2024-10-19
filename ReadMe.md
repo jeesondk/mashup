@@ -67,18 +67,9 @@ MashupAPI
 - ASP.NET Core MVC
 
 
-### High-level design
-<Add diagramm>
-
-
-
-### Steps & Flows
-<Add Sequence diagram>
-
-
 ### Tools & Pacakages
 
-### Application Tools & Packages
+#### Application Tools & Packages
 
 - Microsoft.Extensions.Caching.Memory
 - Microsoft.Extensions.Http
@@ -100,6 +91,78 @@ MashupAPI
 - xunit
 - xunit.runner.visualstudio
 
+### Solution Description
+
+#### High-level design
+![MashupAPI Overview](img\MashupAPI.Overview.svg "MashupAPI Overview")
+
+
+#### Steps & Flows
+![MashupAPI FLow](img\MashupAPI.Flow.svg "MashupAPI Flow")
+
+#### Thoughts and Strategies
+
+Based on the requirements my take on this task is to create a solution, using a layered solution architecture.
+I have seperated the code into Controller, Entities, Services and Infrastructure.
+
+**General**
+I have tried to ensure that no layer inherits more than one layer deep, this is to keep maintainability high and reduce cognitiv complexity
+
+**Infrastructure**
+This layer contains non-business logic related items such as Cache provider, Http Retry policies etc. My intetion here is to decouple the technical components from Presentation, Persistance and Business Logic
+
+*Cahcing*
+The MemoryCache are wrapped in my own interface and class, this allows the Cache provide to be exchange with i.e.: Redis, with a minimal impact to the rest of the solution, as long as the interface are intact.
+
+The caching strategy is "look-thorugh", meaning that I always check the cache first, before calling an external API, this is done to speed up performance as well as to mitigate ratelimit constains.
+
+Cache expire time is set in the appsetting.json file.
+
+*HttpRetryPolicies*
+I have added a retry policy that handles trasient HTTP Errors to add risilience to the rest client, the policy is to retry 3 times and add the retry count to the power of 0.5 as delay.
+
+**Service**
+This layer contains the business logic as well as the orchestration
+
+On the Wikipedia and WikiData Service, I have used JsonNode to help pars the documents as the data came back with non-generic keys for some of the lists. This could have been solved in a number of ways, but as the data I needed from the response was limited, I opted for JsonNode to cherry pick data from the json payloads and deserialize only parts of the payload.
+
+*Wikipedia*
+In this service the Cache key is based on a Base64 encoded string, the reason for that is that "title" used to query Wikipedia, is a string that contains spaces, special chars, etc. To ensure key uniqueness and simplify key generation, I chose to Base64 encode the "title" as key
+
+*CoverArt*
+As noted in the top of this document, Cover Art Archive seems to be down as the result og several DDOS attacks, I still did the implementation with data exampled from their API documentation but calling the API returns "Name or service not known" as it redirects to Internet Archive on HTTP/GET requests.
+
+This is not handeld by the cache, I specifically opted for not caching empty results, at the cost of the API performance, My reasoning here is, that I don't know when it's back up and if I cache data for 1 day, that will then add 1 day from when the service is back up, before cached items will expire and the real date be fetched.
+
+*Mashup*
+The Mashup service is the one that binds it all together and serves as orchestrator, this is also the service that produces the repsonse for the rest API.
+
+I chose to use parallel task execution for fetching Cover Art, the reasoning behind this is, that fetching data for artists with a lot of albums, like Metallica, will take significantly longer if this is done sequential. 
+
+**Entites**
+This layer contains Data models (Reponses) as well as JsonScheames used for validating Json payloads from the external API's comsumed
+
+**Testing**
+I followd TDD practices while coding, starting with a failing test, adding simples implementation and working from there, the general code coverage I see in Rider is 70% for the integration tests and 90% for unit tests.
+I have used Xunit's Trait to set a Category that I can then filter on when running the tests.
+
+#### Further Improvements
+
+##### Testing
+
+- Additional Integration tests
+
+##### Code
+
+- Add telemetry using OTEL
+- Use a Redis Cache over Memory cache as Redis scales better for production
+- Add Tracing
+- Improve logging
+
+##### Documentation
+
+- Change to C4 model diagrams
+- Use Sequence diagrams to explain flow
 
 
 ## Building solution
@@ -129,7 +192,7 @@ dotnet test /p:CollectCoverage=true /p:ExcludeByFile="**/Program.cs" --filter "C
 #### Release build
 
 appsettings.json
-```json
+```
 ...
   "APIEndpoints": {
     "MusicBrainz": "https://musicbrainz.org/ws/2",
@@ -146,7 +209,7 @@ appsettings.json
 #### Development build
 
 appsettings.development.json
-```json
+```
 ...
   "APIEndpoints": {
     "MusicBrainz": "https://musicbrainz.org/ws/2",
@@ -195,7 +258,6 @@ docker run -e ASPNETCORE_ENVIRONMENT=Production -p 8080:8080 mashup-api:latest
 ##### Call API
 ```bash
 curl -X GET "http://localhost:8080/api/v1.0/Mashup?mbid=a466c2a2-6517-42fb-a160-1087c3bafd9f"
-
 ```
 
 #### Development mode
@@ -222,7 +284,6 @@ podman run -e ASPNETCORE_ENVIRONMENT=Production -p 8080:8080 mashup-api:latest
 ##### Call API
 ```bash
 curl -X GET "http://localhost:8080/api/v1.0/Mashup?mbid=a466c2a2-6517-42fb-a160-1087c3bafd9f"
-
 ```
 
 #### Development mode
@@ -243,19 +304,21 @@ The compose file in this project build the code and package the docker image bef
 #### Setting ASPNETCORE_ENVIRONMENT
 
 The compose file already sets the ASPNETCORE_ENVIRONMENT to Production, this disabled the Swagger endpoint.
-
 To change this to Development and enable the swagger endpoint please update the file docker-compose.yml from this
+
 ```yaml
 ...
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
 ...
-
 ```
 to this
+
 ```yaml
+...
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+...
 ```
 Remember to tear down previous version with "docker-compose" down or "podman compose down"
 
