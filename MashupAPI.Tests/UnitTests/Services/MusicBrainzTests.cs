@@ -11,6 +11,7 @@ using MashupAPI.Tests.UnitTests.Mocks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
@@ -48,7 +49,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     }
 
     [Fact]
-    public async void CanGetArtistById()
+    public async Task CanGetArtistById()
     {
         //Given
         var validator = Substitute.For<IJsonValidator>();
@@ -65,7 +66,7 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
     }
     
     [Fact]
-    public async void CanHandleNotSuccessFullGetArtist()
+    public async Task CanHandleNotSuccessFullGetArtist()
     {
         //Given
         var response = new HttpResponseMessage(HttpStatusCode.NotFound)
@@ -160,5 +161,36 @@ public class MusicBrainzTests: IClassFixture<MusicBrainzServiceFixture>
         
         //Then
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CanHandleValidationError()
+    {
+        //Given
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, "something", string.Empty));
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
+        var entity = JsonSerializer.Deserialize<MusicBrainzResponse>(_fixture.MusicBrainzNoRelationsResponse);
+        
+        //When
+        var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
+        
+        //Then
+        result.Should().BeNull();
+    }
+    
+    [Fact]
+    public async Task CanHandleException()
+    {
+        //Given
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Throws(new Exception("test"));
+        var client = new MusicBrainz(_logger, _configuration, _restClient, validator, _cache);
+        
+        //When
+        var result = await client.GetArtist("5b11f4ce-a62d-471e-81fc-a69a8278c7da");
+        
+        //Then
+        result.Should().BeNull();
     }
 }

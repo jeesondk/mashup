@@ -9,6 +9,7 @@ using MashupAPI.Tests.UnitTests.Mocks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
@@ -52,7 +53,7 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
     [InlineData("Q11649", "enwiki", "Nirvana (band)", "en")]
     [InlineData("Q11649", "dewiki", "Nirvana (US-amerikanische Band)", "de")]
     [InlineData("Q11649", "dawiki", "Nirvana (band)", "da")]
-    public async void CanGetWikiDataById(string id, string site, string title, string language)
+    public async Task CanGetWikiDataById(string id, string site, string title, string language)
     {
         //Given
         var validator = Substitute.For<IJsonValidator>();
@@ -69,7 +70,7 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
     }
     
     [Fact]
-    public async void CanHandleNoWikiDataFound()
+    public async Task CanHandleNoWikiDataFound()
     {
         //Given
         var validator = Substitute.For<IJsonValidator>();
@@ -141,5 +142,37 @@ public class WikiDataTests: IClassFixture<WikiDataServiceFixture>
         
         //Then
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CanHandleValidationError()
+    {
+        //Given
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, string.Empty, string.Empty));
+        
+        var client = new WikiData(_logger, _configuration, _restClient, validator, _cache);
+        
+        //When
+        var result = await client.GetWikiDataById("Q11649", "en");
+
+        //Then
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CanHandleException()
+    {
+        //Given
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Throws(new Exception("Test"));
+        
+        var client = new WikiData(_logger, _configuration, _restClient, validator, _cache);
+        
+        //When
+        var result = await client.GetWikiDataById("Q11649", "en");
+
+        //Then
+        result.Should().BeNull();
     }
 }

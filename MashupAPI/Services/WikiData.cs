@@ -18,30 +18,38 @@ public class WikiData(ILogger<WikiData> logger, IConfiguration configuration, Re
 {
     public async Task<Sitelink?> GetWikiDataById(string id, string language = "en")
     {
-        var isCached = cache.TryGetValue($"WikiData:{id}", out Sitelink? cachedWikiData);
-        if (isCached) return cachedWikiData;
-        
-        var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:WikiData") ?? "https://www.wikidata.org/w/api.php");
-        var request = new RestRequest($"{baseUrl}?action=wbgetentities&format=json&ids={id}&props=sitelinks", Method.Get);
-        
-        var response = await client.GetAsync(request);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            logger.LogInformation($"Failed to get artist with id {id}");
+            var isCached = cache.TryGetValue($"WikiData:{id}", out Sitelink? cachedWikiData);
+            if (isCached) return cachedWikiData;
+        
+            var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:WikiData") ?? "https://www.wikidata.org/w/api.php");
+            var request = new RestRequest($"{baseUrl}?action=wbgetentities&format=json&ids={id}&props=sitelinks", Method.Get);
+        
+            var response = await client.GetAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogInformation($"Failed to get artist with id {id}");
+                return null;
+            }
+            var content = response.Content ?? string.Empty;
+            var (result, details, errors) = validator.ValidateJson(WikiDataSchema.Schema, content);
+        
+            if(!result)
+            {
+                logger.LogInformation($"Failed to validate JSON: {details} {errors}");
+                return null;
+            }
+        
+            var siteLink = ParseWikiData(content, id, language);
+            cache.Set($"WikiData:{id}", JsonSerializer.Serialize(siteLink));
+            return siteLink;   
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e, "Failed to get artist");
             return null;
         }
-        var content = response.Content ?? string.Empty;
-        var (result, details, errors) = validator.ValidateJson(WikiDataSchema.Schema, content);
-        
-        if(!result)
-        {
-            logger.LogInformation($"Failed to validate JSON: {details} {errors}");
-            return null;
-        }
-        
-        var siteLink = ParseWikiData(content, id, language);
-        cache.Set($"WikiData:{id}", JsonSerializer.Serialize(siteLink));
-        return siteLink;
     }
     
     private Sitelink? ParseWikiData(string json, string id, string language) 

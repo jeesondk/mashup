@@ -1,12 +1,12 @@
 ﻿namespace MashupAPI.Tests.UnitTests.Fixtures;
 
-public class CoverartArchiveServiceFixture: IDisposable
+public class CoverArtArchiveServiceFixture: IDisposable
 {
     public string CoverartArchiveResponse { get; private set; }
     public string CoverartArchiveMalformedResponse { get; private set; }
     public string CoverartArchiveEmptyResponse { get; private set; }
 
-    public CoverartArchiveServiceFixture()
+    public CoverArtArchiveServiceFixture()
     {
         CoverartArchiveResponse = InitCoverartArchiveResponse();
         CoverartArchiveMalformedResponse = InitCoverartArchiveMalformedResponse();

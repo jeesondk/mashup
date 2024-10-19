@@ -17,31 +17,39 @@ public class Wikipedia(ILogger<Wikipedia> logger, IConfiguration configuration, 
 {
     public async Task<WikiResponse?> GetWikipediaPageByTitle(string title)
     {
-        var cacheKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(title));
-        var isCached = cache.TryGetValue($"Wiki:{cacheKey}", out WikiResponse? cachedWiki);
-        if (isCached) return cachedWiki;
-        
-        var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:Wikipedia") ?? "https://en.wikipedia.org/w/api.php");
-        var request = new RestRequest($"{baseUrl}?action=query&format=json&prop=extracts&exintro=true&redirects=true&titles={title}", Method.Get);
-        
-        var response = await client.GetAsync(request);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            logger.LogInformation($"Failed to get wikipage with title: {title}");
+            var cacheKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(title));
+            var isCached = cache.TryGetValue($"Wiki:{cacheKey}", out WikiResponse? cachedWiki);
+            if (isCached) return cachedWiki;
+        
+            var baseUrl = new Uri(configuration.GetValue<string>("APIEndpoints:Wikipedia") ?? "https://en.wikipedia.org/w/api.php");
+            var request = new RestRequest($"{baseUrl}?action=query&format=json&prop=extracts&exintro=true&redirects=true&titles={title}", Method.Get);
+        
+            var response = await client.GetAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogInformation($"Failed to get wikipage with title: {title}");
+                return null;
+            }
+            var content = response.Content ?? string.Empty;
+            var (result, details, errors) = validator.ValidateJson(WikipediaSchema.Schema, content);
+        
+            if(!result)
+            {
+                logger.LogInformation($"Failed to validate JSON: {details} {errors}");
+                return null;
+            }
+        
+            var wikiData = ParseWikiData(content);
+            cache.Set($"Wiki:{cacheKey}", JsonSerializer.Serialize(wikiData));
+            return wikiData;   
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e, "Failed to get wikipage");
             return null;
         }
-        var content = response.Content ?? string.Empty;
-        var (result, details, errors) = validator.ValidateJson(WikipediaSchema.Schema, content);
-        
-        if(!result)
-        {
-            logger.LogInformation($"Failed to validate JSON: {details} {errors}");
-            return null;
-        }
-        
-        var wikiData = ParseWikiData(content);
-        cache.Set($"Wiki:{cacheKey}", JsonSerializer.Serialize(wikiData));
-        return wikiData;
     }
     
     private WikiResponse ParseWikiData(string json) 

@@ -9,6 +9,7 @@ using MashupAPI.Tests.UnitTests.Mocks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using RestSharp;
 
 namespace MashupAPI.Tests.UnitTests.Services;
@@ -47,7 +48,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
     }
     
     [Fact]
-    public async void CanGetWikipediaPageByTitle()
+    public async Task CanGetWikipediaPageByTitle()
     {
         //Given
         var validator = Substitute.For<IJsonValidator>();
@@ -65,7 +66,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
     }
 
     [Fact]
-    public async void CanHandleMalformedResponse()
+    public async Task CanHandleMalformedResponse()
     {
         //Given
         var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -91,7 +92,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
     }
     
     [Fact]
-    public async void CanHandleErrorResponse()
+    public async Task CanHandleErrorResponse()
     {
         //Given
         var response = new HttpResponseMessage(HttpStatusCode.NotFound)
@@ -117,7 +118,7 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
     }
 
     [Fact]
-    public async void CanHandleNotFound()
+    public async Task CanHandleNotFound()
     {
         //Given
         var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -136,6 +137,38 @@ public class WikipediaTests: IClassFixture<WikipediaServiceFixture>
 
         var client = new Wikipedia(_logger, _configuration, restClient, validator, _cache);
 
+        //When
+        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
+
+        //Then
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CanHandleValidationError()
+    {
+        //Given
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Returns((false, string.Empty, string.Empty));
+        
+        var client = new Wikipedia(_logger, _configuration, _restClient, validator, _cache);
+        
+        //When
+        var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
+
+        //Then
+        result.Should().BeNull();
+    }
+    
+    [Fact]
+    public async Task CanHandleException()
+    {
+        //Given
+        var validator = Substitute.For<IJsonValidator>();
+        validator.ValidateJson(Arg.Any<string>(), Arg.Any<string>()).Throws(new Exception("Test"));
+        
+        var client = new Wikipedia(_logger, _configuration, _restClient, validator, _cache);
+        
         //When
         var result = await client.GetWikipediaPageByTitle("Nirvana+(band)");
 
